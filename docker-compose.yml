@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  api1:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 80
+    depends_on:
+      - db
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"
+
+  api2:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 80
+    depends_on:
+      - db
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - api1
+      - api2
+    ports:
+      - "9999:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.5GB"
+
+  db:
+    image: postgres:alpine
+    environment:
+      POSTGRES_DB: rinhadb
+      POSTGRES_USER: lutador
+      POSTGRES_PASSWORD: umasenhasegura
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "1.5GB"
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge
