@@ -1,19 +1,25 @@
+import datetime
 from fastapi import FastAPI, HTTPException
 from peewee import Model, CharField, DateField, UUIDField, PostgresqlDatabase
 from playhouse.postgres_ext import ArrayField
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, validator
 from typing import Optional, List
 from uuid import uuid4
 
 # Configuração do banco de dados com Peewee
-db = PostgresqlDatabase('rinhadb', user='lutador', password='umasenhasegura', host='db')
+db = PostgresqlDatabase(
+        database='rinhadb', 
+        user='lutador', 
+        password='umasenhasegura', 
+        host='db'
+    )
 
 class Pessoa(Model):
     id = UUIDField(primary_key=True, default=uuid4)
     apelido = CharField(max_length=32, unique=True, index=True)
     nome = CharField(max_length=100)
     nascimento = DateField()
-    stack = ArrayField(CharField, max_length=32)
+    stack = ArrayField(CharField, null=True)
 
     class Meta:
         database = db
@@ -34,6 +40,12 @@ class PessoaCreate(PessoaBase):
 
 class PessoaResponse(PessoaBase):
     id: UUID4
+
+    @validator('nascimento', pre=True)
+    def parse_nascimento(cls, value):
+        if isinstance(value, datetime.date):
+            return value.strftime("%Y-%m-%d")
+        return value
 
 app = FastAPI()
 
